@@ -26,7 +26,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 	float screenDepth, float screenNear)
 {
 	HRESULT result;
-	
+
 	//store the vsync setting
 	m_vsync_enabled = vsync;
 
@@ -64,7 +64,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 	{
 		return false;
 	}
-	
+
 	DXGI_MODE_DESC *displayModeList;
 	//create a list to hold all the possible display modes for this monitor/video card combination
 	displayModeList = new DXGI_MODE_DESC[numModes];
@@ -84,7 +84,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 		return false;
 	}
 
-	unsigned int i, numerator, denominator; 
+	unsigned int i, numerator, denominator;
 	//now go through all the display modes and find the one that matches the screen width and height
 	//when a match is found store the numerator and denominator of the refresh rate for that monitor
 	for (i = 0; i < numModes; ++i)
@@ -315,7 +315,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 
 	//create the rasterizer state from the description we just filled out
 	result = m_device->CreateRasterizerState(&rasterDesc, &m_rasterState);
-	
+
 	if (FAILED(result))
 	{
 		return false;
@@ -349,7 +349,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 
 	//create an orthographic projection matrix for 2D rendering
 	D3DXMatrixOrthoLH(&m_orthoMatrix, (float)screenWidth, (float)screenHeight, screenNear, screenDepth);
-	
+
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	//clear the second depth stencil state before setting the parameters
 	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
@@ -563,7 +563,7 @@ void D3DClass::TurnZBufferOff()
 void D3DClass::TurnOnAlphaBlending()
 {
 	//setup the blend factor
-	float blendFactor[4] = 
+	float blendFactor[4] =
 	{
 		0.0f,
 		0.0f,

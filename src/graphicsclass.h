@@ -12,14 +12,17 @@
 #include<d3dclass.h>
 #include<cameraclass.h>
 #include<textclass.h>
-#include<bitmapclass.h>
-#include<textureshaderclass.h>
+#include<modelclass.h>
+#include<modellistclass.h>
+#include<frustumclass.h>
+#include<lightclass.h>
+#include<lightshaderclass.h>
 
 //globals
-const bool FULL_SCREEN = false;
+const bool FULL_SCREEN = true;
 const bool VSYNC_ENABLED = true;
-const float SCREEN_DEPTH = 1000.0F;
-const float SCREEN_NEAR = 0.1F;
+const float SCREEN_DEPTH = 1000.0f;
+const float SCREEN_NEAR = 0.1f;
 
 class GraphicsClass
 {
@@ -30,20 +33,19 @@ public:
 
 	bool Initialize(int, int, HWND);
 	void Shutdown();
-	bool Frame(int, int, char &);
-	bool Render(int mouseX, int mouseY);
+	bool Frame(int, int, float,float rotationY);
+	bool Render();
 
 private:
 	D3DClass *m_D3D;
 	CameraClass *m_Camera;
-	TextClass *m_Text;
-	BitmapClass *m_Bitmap;
-	TextureShaderClass *m_TextureShader;
-	/*
 	ModelClass *m_Model;
-	LightShaderClass *m_lightShader;
+	ModelListClass *m_modelList;
+	TextClass *m_Text;
 	LightClass *m_Light;
-	*/
+	LightShaderClass *m_lightShader;
+	FrustumClass *m_Frustum;
+
 };
 
 #endif

@@ -9,6 +9,10 @@ SystemClass::SystemClass()
 	m_Input = 0;
 	m_Graphics = 0;
 	m_Sound = 0;
+	m_Fps = 0;
+	m_Cpu = 0;
+	m_Timer = 0;
+	m_Position = 0;
 }
 
 SystemClass::SystemClass(const SystemClass &)
@@ -66,87 +70,51 @@ bool SystemClass::Initialize()
 		return false;
 	}
 
+	m_Fps = new FpsClass;
+	if (!m_Fps)
+	{
+		return false;
+	}
+
+	m_Fps->Initialize();
+
+	m_Cpu = new CpuClass;
+	if (!m_Cpu)
+	{
+		return false;
+	}
+
+	m_Cpu->Initialize();
+
+	m_Timer = new TimerClass;
+	if (!m_Timer)
+	{
+		return false;
+	}
+
+	result = m_Timer->Initialize();
+	if (!result)
+	{
+		MessageBox(m_hwnd, L"Could not initialize the Timer object", L"Error", MB_OK);
+		return false;
+	}
+
+	m_Position = new PositionClass;
+	if (!m_Position)
+	{
+		return false;
+	}
+
 	return true;
-}
-
-void SystemClass::Shutdown()
-{
-	if (m_Sound)
-	{
-		m_Sound->Shutdown();
-		delete m_Sound;
-		m_Sound = 0;
-	}
-
-	if (m_Graphics)
-	{
-		m_Graphics->Shutdown();
-		delete m_Graphics;
-		m_Graphics = 0;
-	}
-
-	if (m_Input)
-	{
-		m_Input->Shutdown();
-		delete m_Input;
-		m_Input = 0;
-	}
-
-	ShutdownWindows();
-}
-
-
-/*
- *	PSEUDO CODE:
- *	While not done yet
- *	Check for windows system messages
- *	Process system messages
- *	Process application loop
- *	Check if user wanted to quit durign the frame processiong
- */
-void SystemClass::Run()
-{
-	MSG msg;
-	bool done, result;
-
-	//initialize the message structure
-	ZeroMemory(&msg, sizeof(MSG));
-
-	//loop until there is a quit message from the window or the user
-	done = false;
-	while (!done)
-	{
-		//handle the windows messages
-		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
-		{
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
-		}
-
-		if (msg.message == WM_QUIT)
-		{
-			done = true;
-		}
-		else
-		{
-			result = Frame();
-			if (!result)
-			{
-				MessageBox(m_hwnd, L"Frame Processing Failed", L"Error", MB_OK);
-				done = true;
-			}
-		}
-
-		if (m_Input->isEscapePressed())
-		{
-			done = true;
-		}
-	}
 }
 
 bool SystemClass::Frame()
 {
 	bool result;
+
+	m_Timer->Frame();
+	m_Fps->Frame();
+	m_Cpu->Frame();
 
 	result = m_Input->Frame();
 	if (!result)
@@ -154,13 +122,25 @@ bool SystemClass::Frame()
 		return false;
 	}
 
-	int mouseX, mouseY;
-	m_Input->GetMouseLocation(mouseX, mouseY);
+	m_Position->SetFrameTime(m_Timer->GetTime());
 
-	char whatTyped = 'X';
-	m_Input->GetWhatTyped(whatTyped);
+	bool keydown;
+	keydown = m_Input->isLeftArrowPressed();
+	m_Position->TurnLeft(keydown);
 
-	result = m_Graphics->Frame(mouseX, mouseY, whatTyped);
+	keydown = m_Input->isRightArrowPressed();
+	m_Position->TurnRight(keydown);
+
+	float rotationY;
+	m_Position->GetRotation(rotationY);
+
+	result = m_Graphics->Frame(m_Fps->GetFps(),m_Cpu->GetCpuPercentage(),m_Timer->GetTime(),rotationY);
+	if (!result)
+	{
+		return false;
+	}
+
+	result = m_Graphics->Render();
 	if (!result)
 	{
 		return false;
@@ -288,3 +268,102 @@ void SystemClass::ShutdownWindows()
 	ApplicationHandle = 0;
 }
 
+void SystemClass::Shutdown()
+{
+	if (m_Position)
+	{
+		delete m_Position;
+		m_Position = 0;
+	}
+
+
+	if (m_Timer)
+	{
+		delete m_Timer;
+		m_Timer = 0;
+	}
+
+	if (m_Cpu)
+	{
+		m_Cpu->Shutdown();
+		delete m_Cpu;
+		m_Cpu = 0;
+	}
+
+	if (m_Fps)
+	{
+		delete m_Fps;
+		m_Fps = 0;
+	}
+
+	if (m_Sound)
+	{
+		m_Sound->Shutdown();
+		delete m_Sound;
+		m_Sound = 0;
+	}
+
+	if (m_Graphics)
+	{
+		m_Graphics->Shutdown();
+		delete m_Graphics;
+		m_Graphics = 0;
+	}
+
+	if (m_Input)
+	{
+		m_Input->Shutdown();
+		delete m_Input;
+		m_Input = 0;
+	}
+
+	ShutdownWindows();
+}
+
+/*
+*	PSEUDO CODE:
+*	While not done yet
+*	Check for windows system messages
+*	Process system messages
+*	Process application loop
+*	Check if user wanted to quit durign the frame processiong
+*/
+void SystemClass::Run()
+{
+	MSG msg;
+	bool done, result;
+
+	//initialize the message structure
+	ZeroMemory(&msg, sizeof(MSG));
+
+	//loop until there is a quit message from the window or the user
+	done = false;
+	while (!done)
+	{
+		//handle the windows messages
+		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+		{
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
+		}
+
+		if (msg.message == WM_QUIT)
+		{
+			done = true;
+		}
+		else
+		{
+			result = Frame();
+			if (!result)
+			{
+				MessageBox(m_hwnd, L"Frame Processing Failed", L"Error", MB_OK);
+				done = true;
+			}
+		}
+
+		if (m_Input->isEscapePressed())
+		{
+			done = true;
+		}
+	}
+}

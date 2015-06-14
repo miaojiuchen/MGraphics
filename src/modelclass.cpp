@@ -15,7 +15,7 @@ ModelClass::ModelClass()
 ModelClass::ModelClass(const ModelClass &rhs){}
 ModelClass::~ModelClass(){}
 
-bool ModelClass::Initialize(ID3D11Device *device, char * modelFilename, WCHAR *textureFilename)
+bool ModelClass::Initialize(ID3D11Device *device, WCHAR *textureFilename,char * modelFilename)
 {
 	bool result;
 

@@ -17,7 +17,7 @@ LightShaderClass::LightShaderClass()
 LightShaderClass::LightShaderClass(const LightShaderClass &){}
 LightShaderClass::~LightShaderClass(){}
 
-bool LightShaderClass::Initialize(ID3D11Device *device,HWND hwnd)
+bool LightShaderClass::Initialize(ID3D11Device *device, HWND hwnd)
 {
 	bool result;
 
@@ -133,8 +133,8 @@ bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *v
 	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
 	//create the vertex input layout
-	result = device->CreateInputLayout(polygonLayout, numElements, 
-		vtSdrBuf->GetBufferPointer(), vtSdrBuf->GetBufferSize(),&m_layout);
+	result = device->CreateInputLayout(polygonLayout, numElements,
+		vtSdrBuf->GetBufferPointer(), vtSdrBuf->GetBufferSize(), &m_layout);
 	if (FAILED(result))
 	{
 		return false;
@@ -218,12 +218,12 @@ bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *v
 
 bool LightShaderClass::Render(ID3D11DeviceContext *deviceContext, int indexCount,
 	D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix,
-	ID3D11ShaderResourceView *texture, D3DXVECTOR3 lightDirection, D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffuseColor, D3DXVECTOR3 cameraPosition,D3DXVECTOR4 specularColor,float specularPower)
+	ID3D11ShaderResourceView *texture, D3DXVECTOR3 lightDirection, D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffuseColor, D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower)
 {
 	bool result;
 
 	//set the shader parameters that it will use for rendering
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, lightDirection,ambientColor, diffuseColor,cameraPosition,specularColor,specularPower);
+	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, lightDirection, ambientColor, diffuseColor, cameraPosition, specularColor, specularPower);
 	if (!result)
 	{
 		return false;
@@ -237,7 +237,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext *deviceContext, int indexCount
 
 bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext *dCtx,
 	D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
-	ID3D11ShaderResourceView *texture, D3DXVECTOR3 litDir, D3DXVECTOR4 ambientColor,D3DXVECTOR4 diffColor,D3DXVECTOR3 cameraPosition,D3DXVECTOR4 specularColor,float specularPower)
+	ID3D11ShaderResourceView *texture, D3DXVECTOR3 litDir, D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffColor, D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;

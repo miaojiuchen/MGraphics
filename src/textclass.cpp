@@ -8,9 +8,9 @@ TextClass::TextClass()
 {
 	m_Font = 0;
 	m_fontShader = 0;
-	m_sentence1 = 0; 
-	m_sentence2 = 0;
-	m_sentence3 = 0;
+	m_sentence_fps = 0;
+	m_sentence_cpu = 0;
+	m_sentence_renderCount = 0;
 }
 
 TextClass::TextClass(const TextClass &)
@@ -55,145 +55,26 @@ bool TextClass::Initialize(ID3D11Device *device, ID3D11DeviceContext *deviceCont
 		return false;
 	}
 
-	result = InitializeSentence(&m_sentence1, 16, device);
+	result = InitializeSentence(&m_sentence_fps, 16, device);
 	if (!result)
 	{
 		return false;
 	}
 
-	result = InitializeSentence(&m_sentence2, 16, device);
+	result = InitializeSentence(&m_sentence_cpu, 16, device);
 	if (!result)
 	{
 		return false;
 	}
 
-	result = InitializeSentence(&m_sentence3, 16, device);
+	result = InitializeSentence(&m_sentence_renderCount, 16, device);
 	if (!result)
 	{
 		return false;
 	}
+	
 
 	return true;
-}
-
-void TextClass::Shutdown()
-{
-	ReleaseSentence(&m_sentence1);
-	ReleaseSentence(&m_sentence2);
-
-	if (m_fontShader)
-	{
-		m_fontShader->Shutdown();
-		delete m_fontShader;
-		m_fontShader = 0;
-	}
-
-	if (m_Font)
-	{
-		m_Font->Shutdown();
-		delete m_Font;
-		m_Font = 0;
-	}
-}
-
-bool TextClass::Render(ID3D11DeviceContext *deviceContext, D3DXMATRIX world, D3DXMATRIX ortho)
-{
-	bool result;
-
-	result = RenderSentence(deviceContext, m_sentence1, world, ortho);
-	if (!result)
-	{
-		return false;
-	}
-
-	result = RenderSentence(deviceContext, m_sentence2, world, ortho);
-	if (!result)
-	{
-		return false;
-	}
-
-	result = RenderSentence(deviceContext, m_sentence3, world, ortho);
-	if (!result)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool TextClass::SetMousePosition(int mouseX, int mouseY, ID3D11DeviceContext *devCtx,char &typed)
-{
-	bool result;
-
-	char tempString[16];
-	char mouseString[16];
-	_itoa_s(mouseX, tempString, 10);
-	strcpy_s(mouseString, "Mouse X : ");
-	strcat_s(mouseString, tempString);
-
-	result = UpdateSentence(m_sentence1, mouseString, 20, 20, 1.0f, 1.0f, 1.0f, devCtx);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Convert the mouseY integer to string format.
-	_itoa_s(mouseY, tempString, 10);
-
-	// Setup the mouseY string.
-	strcpy_s(mouseString, "Mouse Y: ");
-	strcat_s(mouseString, tempString);
-
-	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence2, mouseString, 20, 40, 1.0f, 1.0f, 1.0f, devCtx);
-	if (!result)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool TextClass::SetWhatTyped(char &key, ID3D11DeviceContext *devCtx)
-{
-	bool result;
-
-	char keyString[5];
-	keyString[0] = 'Y';
-	keyString[1] = 'o';
-	keyString[2] = 'u';
-	keyString[3] = ' ';
-	keyString[4] = key;
-
-	result = UpdateSentence(m_sentence3, keyString, 200, 200, 1.0f, 1.0f, 1.0f, devCtx);
-	if (!result)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool TextClass::RenderSentence(ID3D11DeviceContext *deviceContext, SentenceType *sentence, D3DXMATRIX world, D3DXMATRIX ortho)
-{
-	bool result;
-
-	unsigned int stride, offset;
-	stride = sizeof(VertexType);
-	offset = 0;
-
-	deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
-	deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	D3DXVECTOR4 pixelColor;
-	pixelColor = D3DXVECTOR4(sentence->red, sentence->green, sentence->blue, 1.0f);
-
-	result = m_fontShader->Render(deviceContext, sentence->indexCount, world, m_baseViewMatrix, ortho, m_Font->GetTexture(), pixelColor);
-	if (!result)
-	{
-		return false;
-	}
 }
 
 bool TextClass::InitializeSentence(SentenceType **sentence, int maxLength, ID3D11Device *device)
@@ -283,6 +164,172 @@ bool TextClass::InitializeSentence(SentenceType **sentence, int maxLength, ID3D1
 	return true;
 }
 
+bool TextClass::Render(ID3D11DeviceContext *deviceContext, D3DXMATRIX world, D3DXMATRIX ortho)
+{
+	bool result;
+
+	result = RenderSentence(deviceContext, m_sentence_fps, world, ortho);
+	if (!result)
+	{
+		return false;
+	}
+
+	result = RenderSentence(deviceContext, m_sentence_cpu, world, ortho);
+	if (!result)
+	{
+		return false;
+	}
+
+	result = RenderSentence(deviceContext, m_sentence_renderCount, world, ortho);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool TextClass::SetRenderCount(int renderCount, ID3D11DeviceContext *devCtx)
+{
+	char tempString[32];
+	char countString[32];
+	bool result;
+
+
+	// Convert the count integer to string format.
+	_itoa_s(renderCount, tempString, 10);
+
+	// Setup the render count string.
+	strcpy_s(countString, "RC: ");
+	strcat_s(countString, tempString);
+
+	// Update the sentence vertex buffer with the new string information.
+	result = UpdateSentence(m_sentence_renderCount, countString, 20, 60, 1.0f, 1.0f, 1.0f, devCtx);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool TextClass::SetFps(int fps, ID3D11DeviceContext *devCtx)
+{
+	bool result;
+
+	if (fps > 9999)
+	{
+		fps = 9999;
+	}
+
+	char tempString[16];
+	_itoa_s(fps, tempString, 10);
+
+	char fpsString[16];
+	strcpy_s(fpsString, "Fps: ");
+	strcat_s(fpsString, tempString);
+
+	float red, green, blue;
+	if (fps >= 60)
+	{
+		red = 0.0f;
+		green = 1.0f;
+		blue = 0.0f;
+	}
+	else if(fps < 30)
+	{
+		red = 1.0f;
+		green = 0.0f;
+		blue = 0.0f;
+	}
+	else
+	{
+		red = 1.0f;
+		green = 1.0f;
+		blue = 0.0f;
+	}
+
+	result = UpdateSentence(m_sentence_fps, fpsString, 20, 20, red, green, blue, devCtx);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool TextClass::SetCpu(int cpu, ID3D11DeviceContext *devCtx)
+{
+	bool result;
+
+	char tempString[16];
+	char cpuString[16];
+	_itoa_s(cpu, tempString, 10);
+
+	strcpy_s(cpuString, "Cpu: ");
+	strcat_s(cpuString, tempString);
+	strcat_s(cpuString, "%");
+
+	result = UpdateSentence(m_sentence_cpu, cpuString, 20, 40, 0.0f, 1.0f, 0.0f, devCtx);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool TextClass::SetMousePosition(int mouseX, int mouseY, ID3D11DeviceContext *devCtx, char &typed)
+{
+	bool result;
+
+	char tempString[16];
+	char mouseString[16];
+	_itoa_s(mouseX, tempString, 10);
+	strcpy_s(mouseString, "Mouse X : ");
+	strcat_s(mouseString, tempString);
+
+	result = UpdateSentence(m_sentence_fps, mouseString, 20, 20, 1.0f, 1.0f, 1.0f, devCtx);
+	if (!result)
+	{
+		return false;
+	}
+
+	_itoa_s(mouseY, tempString, 10);
+	strcpy_s(mouseString, "Mouse Y: ");
+	strcat_s(mouseString, tempString);
+
+	result = UpdateSentence(m_sentence_cpu, mouseString, 20, 40, 1.0f, 1.0f, 1.0f, devCtx);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool TextClass::RenderSentence(ID3D11DeviceContext *deviceContext, SentenceType *sentence, D3DXMATRIX world, D3DXMATRIX ortho)
+{
+	bool result;
+
+	unsigned int stride, offset;
+	stride = sizeof(VertexType);
+	offset = 0;
+
+	deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
+	deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	D3DXVECTOR4 pixelColor;
+	pixelColor = D3DXVECTOR4(sentence->red, sentence->green, sentence->blue, 1.0f);
+
+	result = m_fontShader->Render(deviceContext, sentence->indexCount, world, m_baseViewMatrix, ortho, m_Font->GetTexture(), pixelColor);
+	if (!result)
+	{
+		return false;
+	}
+}
+
 bool TextClass::UpdateSentence(SentenceType *sentence, char *text, int positionX, int positionY, float r, float g, float b,
 	ID3D11DeviceContext *deviceContext)
 {
@@ -322,7 +369,7 @@ bool TextClass::UpdateSentence(SentenceType *sentence, char *text, int positionX
 	}
 
 	VertexType *verticesPtr;
-	verticesPtr =(VertexType *)mapRes.pData;
+	verticesPtr = (VertexType *)mapRes.pData;
 	memcpy(verticesPtr, (void *)vertices, sizeof(VertexType) *sentence->vertexCount);
 	deviceContext->Unmap(sentence->vertexBuffer, 0);
 
@@ -350,6 +397,27 @@ void TextClass::ReleaseSentence(SentenceType **sentence)
 
 		delete *sentence;
 		*sentence = 0;
+	}
+}
+
+void TextClass::Shutdown()
+{
+	ReleaseSentence(&m_sentence_fps);
+	ReleaseSentence(&m_sentence_cpu);
+	ReleaseSentence(&m_sentence_renderCount);
+
+	if (m_fontShader)
+	{
+		m_fontShader->Shutdown();
+		delete m_fontShader;
+		m_fontShader = 0;
+	}
+
+	if (m_Font)
+	{
+		m_Font->Shutdown();
+		delete m_Font;
+		m_Font = 0;
 	}
 }
 

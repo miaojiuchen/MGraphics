@@ -33,7 +33,11 @@ public:
 	bool Render(ID3D11DeviceContext *, D3DXMATRIX, D3DXMATRIX);
 
 	bool SetMousePosition(int, int, ID3D11DeviceContext *,char &);
-	bool SetWhatTyped(char &, ID3D11DeviceContext *);
+
+	bool SetCpu(int, ID3D11DeviceContext *);
+	bool SetFps(int, ID3D11DeviceContext *);
+	bool SetRenderCount(int renderCount, ID3D11DeviceContext *);
+
 
 private:
 	bool InitializeSentence(SentenceType **, int, ID3D11Device *);
@@ -46,9 +50,10 @@ private:
 	FontShaderClass *m_fontShader;
 	int m_screenWidth, m_screenHeight;
 	D3DXMATRIX m_baseViewMatrix;
-	SentenceType *m_sentence1;
-	SentenceType *m_sentence2;
-	SentenceType *m_sentence3;
+	SentenceType *m_sentence_fps;
+	SentenceType *m_sentence_cpu;
+	SentenceType *m_sentence_renderCount;
+
 };
 
 #endif

@@ -14,6 +14,10 @@ FontShaderClass::FontShaderClass()
 	m_sampleState = 0;
 }
 
+FontShaderClass::FontShaderClass(const FontShaderClass &)
+{
+}
+
 FontShaderClass::~FontShaderClass()
 {
 }
@@ -29,11 +33,6 @@ bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	}
 
 	return true;
-}
-
-void FontShaderClass::Shutdown()
-{
-	ShutdownShader();
 }
 
 bool FontShaderClass::Render(ID3D11DeviceContext *dctx, int indexCount,
@@ -185,6 +184,64 @@ bool FontShaderClass::InitializeShader(ID3D11Device *dev, HWND hwnd, WCHAR *vsFi
 	return true;
 }
 
+bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext *devCtx,
+	D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj,
+	ID3D11ShaderResourceView *texture, D3DXVECTOR4 pxColor)
+{
+	HRESULT result;
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	result = devCtx->Map(m_constantBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	ConstantBufferType *dataPtr;
+	dataPtr = (ConstantBufferType *)mappedResource.pData;
+	D3DXMatrixTranspose(&world, &world);
+	D3DXMatrixTranspose(&view, &view);
+	D3DXMatrixTranspose(&proj, &proj);
+
+	dataPtr->world = world;
+	dataPtr->view = view;
+	dataPtr->projection = proj;
+
+	devCtx->Unmap(m_constantBuffer, NULL);
+
+	unsigned int bufferNum;
+	bufferNum = 0;
+	devCtx->VSSetConstantBuffers(bufferNum, 1, &m_constantBuffer);
+	devCtx->PSSetShaderResources(0, 1, &texture);
+
+
+	result = devCtx->Map(m_pixelBuffer, NULL, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	PixelBufferType *dataPtr2;
+	dataPtr2 = (PixelBufferType *)mappedResource.pData;
+	dataPtr2->pixelColor = pxColor;
+	devCtx->Unmap(m_pixelBuffer, 0);
+
+	bufferNum = 0;
+	devCtx->PSSetConstantBuffers(bufferNum, 1, &m_pixelBuffer);
+
+	return true;
+}
+
+void FontShaderClass::RenderShader(ID3D11DeviceContext *devCtx, int indexCount)
+{
+	devCtx->IASetInputLayout(m_Layout);
+	devCtx->VSSetShader(m_vertexShader, 0, 0);
+	devCtx->PSSetShader(m_pixelShader, 0, 0);
+	devCtx->PSSetSamplers(0, 1, &m_sampleState);
+
+	devCtx->DrawIndexed(indexCount, 0, 0);
+}
+
 void FontShaderClass::ShutdownShader()
 {
 	if (m_pixelBuffer)
@@ -244,63 +301,7 @@ void FontShaderClass::OutputShaderErrorMessage(ID3D10Blob *errMsg, HWND hwnd, WC
 	MessageBox(hwnd, L"Error compilinig shader. Check shader-error.txt for message.", shaderFilename, MB_OK);
 }
 
-bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext *devCtx,
-	D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX proj,
-	ID3D11ShaderResourceView *texture, D3DXVECTOR4 pxColor)
+void FontShaderClass::Shutdown()
 {
-	HRESULT result;
-
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	result = devCtx->Map(m_constantBuffer, NULL,D3D11_MAP_WRITE_DISCARD, NULL, &mappedResource);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	ConstantBufferType *dataPtr;
-	dataPtr = (ConstantBufferType *)mappedResource.pData;
-	D3DXMatrixTranspose(&world, &world);
-	D3DXMatrixTranspose(&view, &view);
-	D3DXMatrixTranspose(&proj, &proj);
-
-	dataPtr->world = world;
-	dataPtr->view = view;
-	dataPtr->projection = proj;
-
-	devCtx->Unmap(m_constantBuffer,NULL);
-
-	unsigned int bufferNum;
-	bufferNum = 0;
-	devCtx->VSSetConstantBuffers(bufferNum, 1, &m_constantBuffer);
-	devCtx->PSSetShaderResources(0, 1, &texture);
-
-
-	result = devCtx->Map(m_pixelBuffer, NULL, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	PixelBufferType *dataPtr2;
-	dataPtr2 = (PixelBufferType *)mappedResource.pData;
-	dataPtr2->pixelColor = pxColor;
-	devCtx->Unmap(m_pixelBuffer, 0);
-
-	bufferNum = 0;
-	devCtx->PSSetConstantBuffers(bufferNum, 1, &m_pixelBuffer);
-
-	return true;
+	ShutdownShader();
 }
-
-void FontShaderClass::RenderShader(ID3D11DeviceContext *devCtx, int indexCount)
-{
-	devCtx->IASetInputLayout(m_Layout);
-	devCtx->VSSetShader(m_vertexShader, 0, 0);
-	devCtx->PSSetShader(m_pixelShader, 0, 0);
-	devCtx->PSSetSamplers(0, 1, &m_sampleState);
-
-	//draw
-	devCtx->DrawIndexed(indexCount, 0, 0);
-}
-
-

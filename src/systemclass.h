@@ -13,6 +13,10 @@
 #include<inputclass.h>
 #include<graphicsclass.h>
 #include<soundclass.h>
+#include<cpuclass.h>
+#include<timerclass.h>
+#include<fpsclass.h>
+#include<positionclass.h>
 
 class SystemClass
 {
@@ -40,6 +44,10 @@ private:
 	InputClass *m_Input;
 	GraphicsClass *m_Graphics;
 	SoundClass *m_Sound;
+	FpsClass *m_Fps;
+	CpuClass *m_Cpu;
+	TimerClass *m_Timer;
+	PositionClass *m_Position;
 
 };
 

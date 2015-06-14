@@ -239,7 +239,7 @@ bool SoundClass::LoadWaveFile(char *filename, IDirectSoundBuffer8 **secondaryBuf
 
 	IDirectSoundBuffer *tempBuffer;
 	//create a temoporary sound buffer with the specific buffer settings
-	result = m_DirectSound->CreateSoundBuffer(&bufferDesc, &tempBuffer,0);
+	result = m_DirectSound->CreateSoundBuffer(&bufferDesc, &tempBuffer, 0);
 	if (FAILED(result))
 	{
 		return false;

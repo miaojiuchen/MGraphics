@@ -43,7 +43,6 @@ D3DXVECTOR4 LightClass::GetDiffuseColor()
 	return m_diffuseColor;
 }
 
-
 D3DXVECTOR3 LightClass::GetDirection()
 {
 	return m_direction;

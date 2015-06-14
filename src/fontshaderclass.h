@@ -27,6 +27,7 @@ private:
 
 public:
 	FontShaderClass();
+	FontShaderClass(const FontShaderClass &);
 	~FontShaderClass();
 
 	bool Initialize(ID3D11Device *, HWND);
