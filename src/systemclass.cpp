@@ -112,6 +112,9 @@ bool SystemClass::Frame()
 {
 	bool result;
 
+	bool keydown;
+	float rotationY;
+
 	m_Timer->Frame();
 	m_Fps->Frame();
 	m_Cpu->Frame();
@@ -124,14 +127,12 @@ bool SystemClass::Frame()
 
 	m_Position->SetFrameTime(m_Timer->GetTime());
 
-	bool keydown;
 	keydown = m_Input->isLeftArrowPressed();
 	m_Position->TurnLeft(keydown);
 
 	keydown = m_Input->isRightArrowPressed();
 	m_Position->TurnRight(keydown);
 
-	float rotationY;
 	m_Position->GetRotation(rotationY);
 
 	result = m_Graphics->Frame(m_Fps->GetFps(),m_Cpu->GetCpuPercentage(),m_Timer->GetTime(),rotationY);

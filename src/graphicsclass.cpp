@@ -6,16 +6,25 @@
 
 GraphicsClass::GraphicsClass()
 {
+	//base stuffs
 	m_D3D = 0;
 	m_Camera = 0;
-	m_Text = 0;
-	m_Model = 0;
-	m_modelList = 0;
-	m_lightShader = 0;
 	m_Light = 0;
-	m_Frustum = 0;
 
+	//models
+	m_GroundModel = 0;
+	m_BathModel = 0;
+	m_WallModel = 0;
+	m_WaterModel = 0;
 
+	//texture render
+	m_ReflectionTexture = 0;
+	m_RefractionTexture = 0;
+
+	//shaders
+	m_LightShader = 0;
+	m_RefractionShader = 0;
+	m_WaterShader = 0;
 }
 
 GraphicsClass::GraphicsClass(const GraphicsClass &)
@@ -30,14 +39,15 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 {
 	bool result;
 
-	//create the Direct3D object
+	/////////////////
+	///base stuffs
+	/////////////////
 	m_D3D = new D3DClass;
 	if (!m_D3D)
 	{
 		return false;
 	}
 
-	//initialize the Direct3D object
 	result = m_D3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 	if (!result)
 	{
@@ -45,54 +55,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	//create the camera object
 	m_Camera = new CameraClass;
 	if (!m_Camera)
-	{
-		return false;
-	}
-
-	//set the initial position of the camera
-	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
-	m_Camera->Render();
-	D3DXMATRIX baseViewMatrix;
-	m_Camera->GetViewMatrix(baseViewMatrix);
-
-	// Create the text object.
-	m_Text = new TextClass;
-	if (!m_Text)
-	{
-		return false;
-	}
-
-	// Initialize the text object.
-	result = m_Text->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd, screenWidth, screenHeight, baseViewMatrix);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the text object.", L"Error", MB_OK);
-		return false;
-	}
-
-	m_Model = new ModelClass;
-	if (!m_Model)
-	{
-		return false;
-	}
-
-	result = m_Model->Initialize(m_D3D->GetDevice(), L"data/seafloor.dds", "data/sphere.txt");
-	if (!result)
-	{
-		return false;
-	}
-
-	m_lightShader = new LightShaderClass;
-	if (!m_lightShader)
-	{
-		return false;
-	}
-
-	result = m_lightShader->Initialize(m_D3D->GetDevice(), hwnd);
-	if (!result)
 	{
 		return false;
 	}
@@ -103,161 +67,361 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
+	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f);
+	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+	m_Light->SetDirection(0.0f, -1.0f, 0.5f);
+	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
+	m_Light->SetSpecularPower(16.0f);
 
-	m_modelList = new ModelListClass;
-	if (!m_modelList)
+	/////////////////
+	/////models
+	/////////////////
+	m_GroundModel = new ModelClass;
+	if (!m_GroundModel)
 	{
 		return false;
 	}
 
-	result = m_modelList->Initialize(25);
+	result = m_GroundModel->Initialize(m_D3D->GetDevice(), "data/ground.txt",
+		L"data/ground01.dds", L"data/ground01.dds", L"data/ground01.dds");
 	if (!result)
 	{
-		MessageBox(hwnd, L"Could not initialize ModelList", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize the ground model object.", L"Error", MB_OK);
 		return false;
 	}
 
-	m_Frustum = new FrustumClass;
-	if (!m_Frustum)
+	m_WallModel = new ModelClass;
+	if (!m_WallModel)
 	{
 		return false;
 	}
 
-	//// Create the texture shader object.
-	//m_TextureShader = new TextureShaderClass;
-	//if (!m_TextureShader)
-	//{
-	//	return false;
-	//}
+	result = m_WallModel->Initialize(m_D3D->GetDevice(), "data/wall.txt",
+		L"data/wall01.dds", L"data/wall01.dds", L"data/wall01.dds");
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the wall model object.", L"Error", MB_OK);
+		return false;
+	}
 
-	//// Initialize the texture shader object.
-	//result = m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd);
-	//if (!result)
-	//{
-	//	MessageBox(hwnd, L"Could not initialize the texture shader object.", L"Error", MB_OK);
-	//	return false;
-	//}
+	m_BathModel = new ModelClass;
+	if (!m_BathModel)
+	{
+		return false;
+	}
 
-	//// Create the bitmap object.
-	//m_Bitmap = new BitmapClass;
-	//if (!m_Bitmap)
-	//{
-	//	return false;
-	//}
+	result = m_BathModel->Initialize(m_D3D->GetDevice(), "data/bath.txt",
+		L"data/marble01.dds", L"data/marble01.dds", L"data/marble01.dds");
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the bath model object.", L"Error", MB_OK);
+		return false;
+	}
 
-	//// Initialize the bitmap object.
-	//result = m_Bitmap->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight, L"data/seafloor.dds", 10, 10);
-	//if (!result)
-	//{
-	//	MessageBox(hwnd, L"Could not initialize the cursor bitmap object.", L"Error", MB_OK);
-	//	return false;
-	//}
+	m_WaterModel = new ModelClass;
+	if (!m_WaterModel)
+	{
+		return false;
+	}
+
+	result = m_WaterModel->Initialize(m_D3D->GetDevice(), "data/water.txt",
+		L"data/water01.dds", L"data/water01.dds", L"data/water01.dds");
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the water model object.", L"Error", MB_OK);
+		return false;
+	}
+
+	/////////////////
+	//texture render
+	/////////////////
+	m_ReflectionTexture = new RenderTextureClass;
+	if (!m_ReflectionTexture)
+	{
+		return false;
+	}
+
+	result = m_ReflectionTexture->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the reflection render to texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_RefractionTexture = new RenderTextureClass;
+	if (!m_RefractionTexture)
+	{
+		return false;
+	}
+
+	result = m_RefractionTexture->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the refraction render to texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+	/////////////////
+	//shaders
+	/////////////////
+	m_LightShader = new LightShaderClass;
+	if (!m_RefractionTexture)
+	{
+		return false;
+	}
+
+	result = m_LightShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the light shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_WaterShader = new WaterShaderClass;
+	if (!m_WaterShader)
+	{
+		return false;
+	}
+
+	result = m_WaterShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the water shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_RefractionShader = new RefractionShaderClass;
+	if (!m_RefractionShader)
+	{
+		return false;
+	}
+
+	result = m_RefractionShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the refraction shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_waterHeight = 2.5f;
+	m_waterTranslation = 0.0f;
 
 	return true;
 }
 
-bool GraphicsClass::Frame(int fps, int cpu, float frameTime,float rotationY)
+bool GraphicsClass::Frame(int fps, int cpu, float frameTime, float rotationY)
 {
-	bool result;
 
-	result = m_Text->SetFps(fps, m_D3D->GetDeviceContext());
-	if (!result)
+	m_waterTranslation += 0.001f;
+	if (m_waterTranslation > 1.0f)
 	{
-		return false;
+		m_waterTranslation -= 1.0f;
 	}
 
-	result = m_Text->SetCpu(cpu, m_D3D->GetDeviceContext());
-	if (!result)
-	{
-		return false;
-	}
-
-	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
-	m_Camera->SetRotation(0.0f,rotationY,0.0f);
+	m_Camera->SetPosition(0.0f, 6.0f, -5.0f);
+	m_Camera->SetRotation(rotationY, 0.0f, 0.0f);
 
 	return true;
 }
 
 bool GraphicsClass::Render()
 {
+	bool result = true;
+
+	result = RenderRefractionToTexture();
+	if (!result)
+	{
+		return false;
+	}
+
+	result = RenderReflectionToTexture();
+	if (!result)
+	{
+		return false;
+	}
+
+	result = RenderScene();
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool GraphicsClass::RenderRefractionToTexture()
+{
 	bool result;
+
+	D3DXVECTOR4 clipPlane;
+	D3DXMATRIX world, view, proj;
+
+	clipPlane = D3DXVECTOR4(0.0f, -1.0f, 0.0f, m_waterHeight + 0.1f);
+
+	m_RefractionTexture->
+		SetRenderTarget(m_D3D->GetDeviceContext(), m_D3D->GetDepthStencilView());
+	m_RefractionTexture->
+		ClearRenderTarget(m_D3D->GetDeviceContext(), m_D3D->GetDepthStencilView(), 0.0f, 0.0f, 0.0f, 1.0f);
+
+	m_Camera->Render();
+	m_D3D->GetWorldMatrix(world);
+	m_Camera->GetViewMatrix(view);
+	m_D3D->GetProjectionMatrix(proj);
+
+	D3DXMatrixTranslation(&world, 0.0f, 2.0f, 0.0f);
+
+	m_BathModel->Render(m_D3D->GetDeviceContext());
+
+	result = m_RefractionShader->Render(m_D3D->GetDeviceContext(),
+		m_BathModel->GetIndexCount(),
+		world, view, proj,
+		m_BathModel->GetTextureArray()[0],
+		m_Light->GetDirection(),
+		m_Light->GetAmbientColor(),
+		m_Light->GetDiffuseColor(),
+		clipPlane
+		);
+	if (!result)
+	{
+		return false;
+	}
+
+	m_D3D->SetBackBufferRenderTarget();
+	return true;
+}
+
+bool GraphicsClass::RenderReflectionToTexture()
+{
+	bool result;
+
+	D3DXMATRIX reflectionView, world, proj;
+
+	m_ReflectionTexture->
+		SetRenderTarget(m_D3D->GetDeviceContext(), m_D3D->GetDepthStencilView());
+	m_ReflectionTexture->
+		ClearRenderTarget(m_D3D->GetDeviceContext(), m_D3D->GetDepthStencilView(), 0.0f, 0.0f, 0.0f, 1.0f);
+
+	m_Camera->RenderReflection(m_waterHeight);
+	reflectionView = m_Camera->GetReflectionViewMatrix();
+
+	m_D3D->GetWorldMatrix(world);
+	m_D3D->GetProjectionMatrix(proj);
+
+	D3DXMatrixTranslation(&world, 0.0f, -6.0f, 8.0f);
+
+	m_WallModel->Render(m_D3D->GetDeviceContext());
+
+	result = m_LightShader->Render(m_D3D->GetDeviceContext(),
+		m_WallModel->GetIndexCount(),
+		world, reflectionView, proj,
+		m_WallModel->GetTextureArray()[0],
+		m_Light->GetDirection(),
+		m_Light->GetAmbientColor(),
+		m_Light->GetDiffuseColor(),
+		m_Camera->GetPosition(),
+		m_Light->GetSpecularColor(),
+		m_Light->GetSpecularPower()
+		);
+	if (!result)
+	{
+		return false;
+	}
+
+	m_D3D->SetBackBufferRenderTarget();
+	return true;
+}
+
+bool GraphicsClass::RenderScene()
+{
+	bool result;
+
+	D3DXMATRIX world, view, proj, reflection;
 
 	m_D3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
-	//generate the view matrix based on the camera's position
 	m_Camera->Render();
+	m_Camera->GetViewMatrix(view);
+	m_D3D->GetProjectionMatrix(proj);
 
-	D3DXMATRIX viewMatrix, projectionMatrix, worldMatrix, orthoMatrix;
-	//get the world ,view,and projection matrices from the camera and d3d object
-	m_Camera->GetViewMatrix(viewMatrix);
-	m_D3D->GetWorldMatrix(worldMatrix);
-	m_D3D->GetProjectionMatrix(projectionMatrix);
-	m_D3D->GetOrthoMatrix(orthoMatrix);
+	m_D3D->GetWorldMatrix(world);
+	D3DXMatrixTranslation(&world, 0.0f, 1.0f, 0.0f);
 
-	m_Frustum->ConstructFrustum(SCREEN_DEPTH, projectionMatrix, viewMatrix);
-
-	int modelCount, renderCount, index;
-	float posX, posY, posZ,radius;
-	D3DXVECTOR4 color;
-	bool renderModel;
-
-	modelCount = m_modelList->GetModelCount();
-
-	//model count that has been rendered
-	renderCount = 0;
-
-	for (index = 0; index != modelCount; ++index)
-	{
-		m_modelList->GetData(index, posX, posY, posZ, color);
-		radius = 1.0f;
-		renderModel = m_Frustum->CheckSphere(posX, posY, posZ, radius);
-		if (renderModel)
-		{
-			//move the model to the location it should be rendered to
-			D3DXMatrixTranslation(&worldMatrix, posX, posY, posZ);
-
-			m_Model->Render(m_D3D->GetDeviceContext());
-
-			m_lightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(),
-				worldMatrix, viewMatrix, projectionMatrix,
-				m_Model->GetTexture(), m_Light->GetDirection(), color,color,m_Camera->GetPosition(),color,1.0f);
-
-			m_D3D->GetWorldMatrix(worldMatrix);
-			renderCount++;
-		}
-	}
-
-	result = m_Text->SetRenderCount(renderCount, m_D3D->GetDeviceContext());
+	m_GroundModel->Render(m_D3D->GetDeviceContext());
+	result = m_LightShader->Render(m_D3D->GetDeviceContext(),
+		m_GroundModel->GetIndexCount(),
+		world, view, proj,
+		m_GroundModel->GetTextureArray()[0],
+		m_Light->GetDirection(),
+		m_Light->GetAmbientColor(),
+		m_Light->GetDiffuseColor(),
+		m_Camera->GetPosition(),
+		m_Light->GetSpecularColor(),
+		m_Light->GetSpecularPower()
+		);
 	if (!result)
 	{
 		return false;
 	}
 
-	/*2D rendering.¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý¡ý*/
-	m_D3D->TurnZBufferOff();
-	m_D3D->TurnOnAlphaBlending();
+	m_D3D->GetWorldMatrix(world);
+	D3DXMatrixTranslation(&world, 0.0f, 6.0f, 8.0f);
 
-	/*result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Bitmap->GetIndexCount(), worldMatrix, viewMatrix, orthoMatrix, m_Bitmap->GetTexture());
-	if (!result)
-	{
-		return false;
-	}*/
+	m_WallModel->Render(m_D3D->GetDeviceContext());
 
-	result = m_Text->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+	result = m_LightShader->Render(m_D3D->GetDeviceContext(),
+		m_WallModel->GetIndexCount(),
+		world, view, proj,
+		m_WallModel->GetTextureArray()[0],
+		m_Light->GetDirection(),
+		m_Light->GetAmbientColor(),
+		m_Light->GetDiffuseColor(),
+		m_Camera->GetPosition(),
+		m_Light->GetSpecularColor(),
+		m_Light->GetSpecularPower()
+		);
 	if (!result)
 	{
 		return false;
 	}
 
-	/*result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 100, 100);
+	m_D3D->GetWorldMatrix(world);
+	D3DXMatrixTranslation(&world, 0.0f, 2.0f, 0.0f);
+	m_BathModel->Render(m_D3D->GetDeviceContext());
+	result = m_LightShader->Render(m_D3D->GetDeviceContext(),
+		m_BathModel->GetIndexCount(),
+		world, view, proj,
+		m_BathModel->GetTextureArray()[0],
+		m_Light->GetDirection(),
+		m_Light->GetAmbientColor(),
+		m_Light->GetDiffuseColor(),
+		m_Camera->GetPosition(),
+		m_Light->GetSpecularColor(),
+		m_Light->GetSpecularPower()
+		);
 	if (!result)
 	{
 		return false;
-	}*/
+	}
 
-	m_D3D->TurnOffAlphaBlending();
-	m_D3D->TurnZBufferOn();
+	m_D3D->GetWorldMatrix(world);
+	reflection = m_Camera->GetReflectionViewMatrix();
+	D3DXMatrixTranslation(&world, 0.0f, m_waterHeight, 0.0f);
+
+	m_WaterModel->Render(m_D3D->GetDeviceContext());
+
+	result = m_WaterShader->Render(m_D3D->GetDeviceContext(),
+		m_WaterModel->GetIndexCount(),
+		world, view, proj, reflection,
+		m_ReflectionTexture->GetShaderResourceView(),
+		m_RefractionTexture->GetShaderResourceView(),
+		m_WaterModel->GetTextureArray()[0],
+		m_waterTranslation,
+		0.01f
+		);
+	if (!result)
+	{
+		return false;
+	}
 
 	m_D3D->EndScene();
 
@@ -266,31 +430,39 @@ bool GraphicsClass::Render()
 
 void GraphicsClass::Shutdown()
 {
-	/*if (m_TextureShader)
+	if (m_WaterShader)
 	{
-		m_TextureShader->Shutdown();
-		delete m_TextureShader;
-		m_TextureShader = 0;
+		m_WaterShader->Shutdown();
+		delete m_WaterShader;
+		m_WaterShader = 0;
 	}
 
-	if (m_Bitmap)
+	if (m_RefractionShader)
 	{
-		m_Bitmap->Shutdown();
-		delete m_Bitmap;
-		m_Bitmap = 0;
-	}*/
-
-	if (m_Frustum)
-	{
-		delete m_Frustum;
-		m_Frustum = 0;
+		m_RefractionShader->Shutdown();
+		delete m_RefractionShader;
+		m_RefractionShader = 0;
 	}
 
-	if (m_modelList)
+	if (m_LightShader)
 	{
-		m_modelList->Shutdown();
-		delete m_modelList;
-		m_modelList = 0;
+		m_LightShader->Shutdown();
+		delete m_LightShader;
+		m_LightShader = 0;
+	}
+
+	if (m_ReflectionTexture)
+	{
+		m_ReflectionTexture->Shutdown();
+		delete m_ReflectionTexture;
+		m_ReflectionTexture = 0;
+	}
+
+	if (m_RefractionTexture)
+	{
+		m_RefractionTexture->Shutdown();
+		delete m_RefractionTexture;
+		m_RefractionTexture = 0;
 	}
 
 	if (m_Light)
@@ -299,32 +471,38 @@ void GraphicsClass::Shutdown()
 		m_Light = 0;
 	}
 
-	if (m_lightShader)
+	if (m_WaterModel)
 	{
-		m_lightShader->Shutdown();
-		delete m_lightShader;
-		m_lightShader = 0;
+		m_WaterModel->Shutdown();
+		delete m_WaterModel;
+		m_WaterModel = 0;
 	}
 
-	if (m_Model)
+	if (m_BathModel)
 	{
-		m_Model->Shutdown();
-		delete m_Model;
-		m_Model = 0;
+		m_BathModel->Shutdown();
+		delete m_BathModel;
+		m_BathModel = 0;
 	}
 
+	if (m_WallModel)
+	{
+		m_WallModel->Shutdown();
+		delete m_WallModel;
+		m_WallModel = 0;
+	}
+
+	if (m_GroundModel)
+	{
+		m_GroundModel->Shutdown();
+		delete m_GroundModel;
+		m_GroundModel = 0;
+	}
 
 	if (m_Camera)
 	{
 		delete m_Camera;
 		m_Camera = 0;
-	}
-
-	if (m_Text)
-	{
-		m_Text->Shutdown();
-		delete m_Text;
-		m_Text = 0;
 	}
 
 	if (m_D3D)

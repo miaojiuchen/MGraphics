@@ -14,15 +14,21 @@ LightShaderClass::LightShaderClass()
 	m_cameraBuffer = 0;
 	m_lightBuffer = 0;
 }
-LightShaderClass::LightShaderClass(const LightShaderClass &){}
-LightShaderClass::~LightShaderClass(){}
+
+LightShaderClass::LightShaderClass(const LightShaderClass &)
+{
+}
+
+LightShaderClass::~LightShaderClass()
+{
+}
 
 bool LightShaderClass::Initialize(ID3D11Device *device, HWND hwnd)
 {
 	bool result;
 
 	//initialize the vertex and pixel shaders
-	result = IntializeShader(device, hwnd, L"../CGraphics/lightVS.hlsl", L"../CGraphics/lightPS.hlsl");
+	result = InitializeShader(device, hwnd, L"lightVS.hlsl", L"lightPS.hlsl");
 	if (!result)
 	{
 		return false;
@@ -31,7 +37,7 @@ bool LightShaderClass::Initialize(ID3D11Device *device, HWND hwnd)
 	return true;
 }
 
-bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *vFname, WCHAR *pFname)
+bool LightShaderClass::InitializeShader(ID3D11Device *device, HWND hwnd, WCHAR *vFname, WCHAR *pFname)
 {
 	HRESULT result;
 
@@ -45,22 +51,18 @@ bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *v
 	D3D11_BUFFER_DESC cameraBufferDesc;
 	D3D11_BUFFER_DESC lightBufDesc;
 
-	//initialize the pointers this function will use to null
 	errMsg = 0;
 	vtSdrBuf = 0;
 	pxSdrBuf = 0;
 
-	//compile the vertex shader code
-	result = D3DX11CompileFromFile(vFname, NULL, NULL, "LightVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
+	result = D3DX11CompileFromFileW(vFname, NULL, NULL, "LightVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
 		&vtSdrBuf, &errMsg, NULL);
 	if (FAILED(result))
 	{
-		// If the shader failed to compile it should have writen something to the error message.
 		if (errMsg)
 		{
 			OutputShaderErrorMessage(errMsg, hwnd, vFname);
 		}
-		// If there was nothing in the error message then it simply could not find the shader file itself.
 		else
 		{
 			MessageBox(hwnd, vFname, L"Missing VS Shader File", MB_OK);
@@ -69,17 +71,14 @@ bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *v
 		return false;
 	}
 
-	//compile the pixel shader code
-	result = D3DX11CompileFromFile(pFname, NULL, NULL, "LightPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
+	result = D3DX11CompileFromFileW(pFname, NULL, NULL, "LightPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
 		&pxSdrBuf, &errMsg, NULL);
 	if (FAILED(result))
 	{
-		// If the shader failed to compile it should have writen something to the error message.
 		if (errMsg)
 		{
 			OutputShaderErrorMessage(errMsg, hwnd, pFname);
 		}
-		// If there was nothing in the error message then it simply could not find the file itself.
 		else
 		{
 			MessageBox(hwnd, pFname, L"Missing Shader File", MB_OK);
@@ -88,7 +87,6 @@ bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *v
 		return false;
 	}
 
-	//create the vertex shader from the buffer
 	result = device->CreateVertexShader(vtSdrBuf->GetBufferPointer(), vtSdrBuf->GetBufferSize(),
 		NULL, &m_vertexShader);
 	if (FAILED(result))
@@ -96,7 +94,6 @@ bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *v
 		return false;
 	}
 
-	//create the pixel shader from the buffer
 	result = device->CreatePixelShader(pxSdrBuf->GetBufferPointer(), pxSdrBuf->GetBufferSize(),
 		NULL, &m_pixelShader);
 	if (FAILED(result))
@@ -104,7 +101,6 @@ bool LightShaderClass::IntializeShader(ID3D11Device *device, HWND hwnd, WCHAR *v
 		return false;
 	}
 
-	//create the vertex input layout description
 	polygonLayout[0].SemanticName = "POSITION";
 	polygonLayout[0].SemanticIndex = 0;
 	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -223,7 +219,17 @@ bool LightShaderClass::Render(ID3D11DeviceContext *deviceContext, int indexCount
 	bool result;
 
 	//set the shader parameters that it will use for rendering
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, lightDirection, ambientColor, diffuseColor, cameraPosition, specularColor, specularPower);
+	result = SetShaderParameters(deviceContext, 
+		worldMatrix, 
+		viewMatrix, 
+		projectionMatrix, 
+		texture, 
+		lightDirection, 
+		ambientColor, 
+		diffuseColor, 
+		cameraPosition, 
+		specularColor, 
+		specularPower);
 	if (!result)
 	{
 		return false;
@@ -237,7 +243,13 @@ bool LightShaderClass::Render(ID3D11DeviceContext *deviceContext, int indexCount
 
 bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext *dCtx,
 	D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
-	ID3D11ShaderResourceView *texture, D3DXVECTOR3 litDir, D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffColor, D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower)
+	ID3D11ShaderResourceView *texture,
+	D3DXVECTOR3 litDir, 
+	D3DXVECTOR4 ambientColor, 
+	D3DXVECTOR4 diffColor,
+	D3DXVECTOR3 cameraPosition, 
+	D3DXVECTOR4 specularColor, 
+	float specularPower)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -246,86 +258,56 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext *dCtx,
 	LightBufferType *lbPtr;
 	CameraBufferType *cbPtr;
 
-	//transpose the matrices to prepare them for the shader
 	D3DXMatrixTranspose(&world, &world);
 	D3DXMatrixTranspose(&view, &view);
 	D3DXMatrixTranspose(&projection, &projection);
 
-	//////////////////////////////
-	//set matrix constant buffer//
-	//////////////////////////////
-
-	//lock the constant buffer so it can be written to
+	///////////////////
+	//vertex shader
+	///////////////////
 	result = dCtx->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
-
 	mbPtr = (MatrixBufferType *)mappedResource.pData;
-
-	//copy the matrices into the constant buffer
 	mbPtr->world = world;
 	mbPtr->view = view;
 	mbPtr->projection = projection;
-
-	//unlock the constant buffer
 	dCtx->Unmap(m_matrixBuffer, 0);
-
-	//set the position of the constant buffer in the vertex shader
 	bufNumber = 0;
-
-	//now set the constant buffer in the vertex shader with the updated values
 	dCtx->VSSetConstantBuffers(bufNumber, 1, &m_matrixBuffer);
 
-	//lock the camera constant buffer so it can be written to
 	result = dCtx->Map(m_cameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
-
-	//get a pointer to the data in the constant buffer
 	cbPtr = (CameraBufferType *)mappedResource.pData;
-
-	//copy the camera position into the constant buffer
 	cbPtr->cameraPosition = cameraPosition;
 	cbPtr->padding = 0.0f;
-
 	dCtx->Unmap(m_cameraBuffer, 0);
-
 	bufNumber = 1;
-
 	dCtx->VSSetConstantBuffers(bufNumber, 1, &m_cameraBuffer);
 
-	//now set shader texture resource in the pixel shader
+	///////////////////
+	//Pixel shader
+	///////////////////
 	dCtx->PSSetShaderResources(0, 1, &texture);
 
-	/////////////////////////////
-	//set light constant buffer//
-	/////////////////////////////
-
-	//lock the light constant buffer so it can be written to
 	result = dCtx->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
-
 	lbPtr = (LightBufferType *)mappedResource.pData;
 	lbPtr->ambientColor = ambientColor;
 	lbPtr->lightDirection = litDir;
 	lbPtr->diffuseColor = diffColor;
 	lbPtr->specularColor = specularColor;
 	lbPtr->specularPower = specularPower;
-
-	//unlock the constant buffer
 	dCtx->Unmap(m_lightBuffer, 0);
-
-	//set the position of the light constant buffer in the pixel shader
 	bufNumber = 0;
-
-	//finally set the light constant buffer in the pixel shader with the updated values
 	dCtx->PSSetConstantBuffers(bufNumber, 1, &m_lightBuffer);
 
 	return true;
@@ -345,15 +327,11 @@ void LightShaderClass::RenderShader(ID3D11DeviceContext *dCtx, int indexCount)
 
 	//render the triangle
 	dCtx->DrawIndexed(indexCount, 0, 0);
-
-	return;
 }
 
 void LightShaderClass::Shutdown()
 {
 	ShutdownShader();
-
-	return;
 }
 
 void LightShaderClass::ShutdownShader()
@@ -406,8 +384,6 @@ void LightShaderClass::ShutdownShader()
 		m_vertexShader->Release();
 		m_vertexShader = 0;
 	}
-
-	return;
 }
 
 void LightShaderClass::OutputShaderErrorMessage(ID3D10Blob * errMsg, HWND hwnd, WCHAR *fName)
@@ -440,6 +416,4 @@ void LightShaderClass::OutputShaderErrorMessage(ID3D10Blob * errMsg, HWND hwnd, 
 
 	// Pop a message up on the screen to notify the user to check the text file for compile errors.
 	MessageBox(hwnd, L"Error compiling shader file.Please check f:\shader-error.txt for more information!", fName, MB_OK);
-
-	return;
 }
