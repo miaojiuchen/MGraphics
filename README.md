@@ -1,2 +1,2 @@
 # MGraphics
-Fucking DirectX 11 Tutorials Practices
+My DirectX 11 Tutorials Practices
